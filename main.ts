@@ -14,6 +14,17 @@ const T = {
   64: [0, 1, 1], 65: [0, 2, 0], 80: [0, 1, 0], 81: [0, 1, 0], 82: [0, 0, 1], 83: [0, 1, 0],
 };
 
+// The same table as three flat typed arrays, so the dispatch loop reads numbers, not objects.
+// IM is -1 for a byte no opcode names (an unknown opcode traps 5).
+const IM = new Int8Array(256).fill(-1);
+const PP = new Int8Array(256);
+const PS = new Int8Array(256);
+for (const k in T) {
+  IM[k] = T[k][0];
+  PP[k] = T[k][1];
+  PS[k] = T[k][2];
+}
+
 function run(p, inp) {
   const D = new Int32Array(256);
   const C = new Int32Array(64);
@@ -26,13 +37,12 @@ function run(p, inp) {
     if (st === 1e6) return end(10);
     if (pc < 0 || pc >= n) return end(9);
     const op = p[pc];
-    const e = T[op];
-    if (!e) return end(5);
-    const im = e[0];
+    const im = IM[op];
+    if (im < 0) return end(5);
     if (pc + im >= n) return end(9);
     st++;
-    if (sp < e[1]) return end(2);
-    if (sp - e[1] + e[2] > 256) return end(3);
+    if (sp < PP[op]) return end(2);
+    if (sp - PP[op] + PS[op] > 256) return end(3);
     const nx = pc + 1 + im;
     pc = nx;
     switch (op) {
